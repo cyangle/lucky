@@ -25,17 +25,20 @@ class Lucky::LogHandler
   def call(context)
     should_skip_logging = settings.skip_if.try &.call(context)
 
-    if should_skip_logging
-      call_next(context)
-    else
-      log_request_start(context)
-
-      duration = Time.measure do
+    Log.with_context do
+      Log.context.set(request_id: context.request_id)
+      if should_skip_logging
         call_next(context)
-      end
+      else
+        log_request_start(context)
 
-      log_request_end(context, duration: duration)
-      Lucky::Events::RequestCompleteEvent.publish(duration)
+        duration = Time.measure do
+          call_next(context)
+        end
+
+        log_request_end(context, duration: duration)
+        Lucky::Events::RequestCompleteEvent.publish(duration)
+      end
     end
   rescue e
     log_exception(context, Time.utc, e)
@@ -45,9 +48,8 @@ class Lucky::LogHandler
   private def log_request_start(context : HTTP::Server::Context) : Nil
     Lucky::Log.dexter.info do
       {
-        REQUEST_START_KEYS[:method]     => context.request.method,
-        REQUEST_START_KEYS[:path]       => context.request.resource,
-        REQUEST_START_KEYS[:request_id] => context.request_id,
+        REQUEST_START_KEYS[:method] => context.request.method,
+        REQUEST_START_KEYS[:path]   => context.request.resource,
       }
     end
   end
@@ -55,9 +57,8 @@ class Lucky::LogHandler
   private def log_request_end(context : HTTP::Server::Context, duration : Time::Span) : Nil
     Lucky::Log.dexter.info do
       {
-        REQUEST_END_KEYS[:status]     => context.response.status_code,
-        REQUEST_END_KEYS[:duration]   => Lucky::LoggerHelpers.elapsed_text(duration),
-        REQUEST_END_KEYS[:request_id] => context.request_id,
+        REQUEST_END_KEYS[:status]   => context.response.status_code,
+        REQUEST_END_KEYS[:duration] => Lucky::LoggerHelpers.elapsed_text(duration),
       }
     end
   end
