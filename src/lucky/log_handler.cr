@@ -48,8 +48,9 @@ class Lucky::LogHandler
   private def log_request_start(context : HTTP::Server::Context) : Nil
     Lucky::Log.dexter.info do
       {
-        REQUEST_START_KEYS[:method] => context.request.method,
-        REQUEST_START_KEYS[:path]   => context.request.resource,
+        REQUEST_START_KEYS[:method]     => context.request.method,
+        REQUEST_START_KEYS[:path]       => context.request.resource,
+        REQUEST_START_KEYS[:request_id] => context.request_id,
       }
     end
   end
@@ -57,8 +58,9 @@ class Lucky::LogHandler
   private def log_request_end(context : HTTP::Server::Context, duration : Time::Span) : Nil
     Lucky::Log.dexter.info do
       {
-        REQUEST_END_KEYS[:status]   => context.response.status_code,
-        REQUEST_END_KEYS[:duration] => Lucky::LoggerHelpers.elapsed_text(duration),
+        REQUEST_END_KEYS[:status]     => context.response.status_code,
+        REQUEST_END_KEYS[:duration]   => Lucky::LoggerHelpers.elapsed_text(duration),
+        REQUEST_END_KEYS[:request_id] => context.request_id,
       }
     end
   end
