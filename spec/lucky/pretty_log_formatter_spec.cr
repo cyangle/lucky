@@ -81,9 +81,17 @@ describe Lucky::PrettyLogFormatter do
     io.to_s.should start_with(" #{"▸".colorize.red}")
     io.to_s.should contain(" #{ex.class.name} ".colorize.bold.on_red.to_s)
   end
+
+  it "formats data" do
+    io = IO::Memory.new
+    metadata = Log::Metadata.build({metadata: "meta", more: "data"})
+    format(io, severity: Log::Severity::Warn, data: {first: "message", second: "message"}, metadata: metadata)
+
+    io.to_s.chomp.should eq(" #{"▸".colorize.yellow} First #{"message".colorize.yellow.bold}. Second #{"message".colorize.bold}. Metadata #{"meta".colorize.bold}. More #{"data".colorize.bold}")
+  end
 end
 
-private def format(io, data : NamedTuple?, message : String = "", severity = Log::Severity::Info, exception : Exception? = nil)
+private def format(io, data : NamedTuple?, message : String = "", severity = Log::Severity::Info, metadata : Log::Metadata = Log::Metadata.empty, exception : Exception? = nil)
   Log.with_context do
     Log.context.set(local: data) if data
 
@@ -91,7 +99,7 @@ private def format(io, data : NamedTuple?, message : String = "", severity = Log
       source: "lucky-test",
       message: message,
       severity: severity,
-      data: Log::Metadata.build(Log::Metadata.empty),
+      data: metadata,
       exception: exception
 
     Lucky::PrettyLogFormatter.new(

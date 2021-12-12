@@ -35,6 +35,10 @@ struct Lucky::PrettyLogFormatter < Dexter::BaseFormatter
         res[key.to_s] = value
       end
 
+      entry.data.try &.each do |key, value|
+        res[key.to_s] = value
+      end
+
       res
     end
 
